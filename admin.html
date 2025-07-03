@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Admin - Data Pemesan Tiket</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  h2 {
+    text-align: center;
+    margin: 20px 0;
+    color: #222;
+  }
+  .login-container {
+    max-width: 360px;
+    margin: 100px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  }
+  .login-container input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+    text-align: center;
+  }
+  .login-container button {
+    width: 100%;
+    padding: 12px;
+    background: #7a7a7b;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .login-container button:hover {
+    background: #5e5e5f;
+  }
+  .data-container {
+    padding: 20px 40px;
+  }
+  .table-container {
+    overflow-x: auto;
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 14px;
+  }
+  th {
+    background: #7a7a7b;
+    color: #fff;
+    white-space: nowrap;
+  }
+  tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  tr:hover {
+    background: #e6e6e6;
+  }
+  .logout-btn {
+    padding: 10px 24px;
+    background: #7a7a7b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+    float: right;
+  }
+  .logout-btn:hover {
+    background: #5e5e5f;
+  }
+  @media (max-width: 768px) {
+    th, td {
+      font-size: 12px;
+      padding: 8px;
+    }
+    .data-container {
+      padding: 10px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN ADMIN -->
+<div class="login-container" id="loginForm">
+  <h2>Login Admin</h2>
+  <input type="text" id="username" placeholder="Masukkan Username" autocomplete="off">
+  <input type="password" id="password" placeholder="Masukkan Password">
+  <button onclick="login()">Masuk</button>
+</div>
+
+<!-- PANEL ADMIN -->
+<div class="data-container" id="adminPanel" style="display:none;">
+  <h2>Data Pemesan Tiket 1 Dekade Ultras Manmodel</h2>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Lengkap</th>
+          <th>Email</th>
+          <th>No KTP</th>
+          <th>No Telepon</th>
+          <th>Kategori Tiket</th>
+          <th>Harga Tiket</th>
+          <th>Metode Pembayaran</th>
+          <th>Waktu Pemesanan</th>
+        </tr>
+      </thead>
+      <tbody id="tabelPemesan"></tbody>
+    </table>
+  </div>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<script>
+  const hargaTiket = {
+    "Pre Sale 1": "Rp 50.000",
+    "Pre Sale 2": "Rp 65.000",
+    "Pre Sale 3": "Rp 75.000"
+  };
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1HWtoCb-EOapsJu7wnOXIXTEtQEOLCZ8",
+    authDomain: "satudekade-4b54a.firebaseapp.com",
+    databaseURL: "https://satudekade-4b54a-default-rtdb.firebaseio.com",
+    projectId: "satudekade-4b54a",
+    storageBucket: "satudekade-4b54a.appspot.com",
+    messagingSenderId: "76649124389",
+    appId: "1:76649124389:web:3b0b7072ea71e7ece7a5cc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const tabel = document.getElementById('tabelPemesan');
+
+  window.onload = () => {
+    if (localStorage.getItem('adminLoggedIn') === 'true') showAdminPanel();
+  };
+
+  function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    if (user === 'admin' && pass === 'ultrasmanmodel') {
+      localStorage.setItem('adminLoggedIn', 'true');
+      showAdminPanel();
+    } else {
+      alert('Username atau password salah!');
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('adminLoggedIn');
+    location.reload();
+  }
+
+  function showAdminPanel() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    loadData();
+  }
+
+  // REAL-TIME LISTENER UNTUK DATA PEMESAN
+  function loadData() {
+    db.ref('pemesan').on('value', snapshot => {
+      const list = [];
+      snapshot.forEach(namaSnap => {
+        const nama = namaSnap.key;
+        namaSnap.forEach(emailSnap => {
+          const email = emailSnap.key.replace(/_/g, '.');
+          emailSnap.forEach(ktpSnap => {
+            const ktp = ktpSnap.key;
+            ktpSnap.forEach(telpSnap => {
+              const telp = telpSnap.key;
+              telpSnap.forEach(kategoriSnap => {
+                const kategori = kategoriSnap.key;
+                kategoriSnap.forEach(metodeSnap => {
+                  const metode = metodeSnap.key;
+                  const data = metodeSnap.val();
+                  list.push({
+                    nama, email, ktp, telp, kategori, metode,
+                    harga: hargaTiket[kategori], waktu: new Date(data.tanggal), tanggal: data.tanggal
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+      if (list.length === 0) {
+        tabel.innerHTML = '<tr><td colspan="9">Belum ada data pemesanan.</td></tr>';
+        return;
+      }
+
+      list.sort((a,b) => a.waktu - b.waktu);
+      tabel.innerHTML = list.map((item,i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${item.nama}</td>
+          <td>${item.email}</td>
+          <td>${item.ktp}</td>
+          <td>${item.telp}</td>
+          <td>${item.kategori}</td>
+          <td>${item.harga}</td>
+          <td>${item.metode}</td>
+          <td>${item.tanggal}</td>
+        </tr>`).join('');
+    }, error => {
+      tabel.innerHTML = '<tr><td colspan="9">Error memuat data.</td></tr>';
+      console.error(error);
+    });
+  }
+</script>
+
+</body>
+</html>

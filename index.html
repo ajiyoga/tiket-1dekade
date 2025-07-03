@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pemesanan Tiket Anniversary 1 Dekade Ultras Manmodel</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #fff; color: #333; }
+    .container { padding: 20px; max-width: 480px; margin: auto; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin-top: 15px; font-weight: 600; }
+    input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; }
+    .harga-info { margin-top: 10px; padding: 10px; background: #e8e8e8; border-radius: 6px; font-weight: bold; }
+    button { width: 100%; padding: 12px; margin-top: 25px; background-color: #444; border: none; color: white; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+    /* Payment section */
+    .payment-info { margin-top: 20px; padding: 10px; background-color: #f1f1f1; border-left: 4px solid #444; border-radius: 6px; }
+    .payment-card {
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .payment-table { width: 100%; border-collapse: collapse; }
+    .payment-table th { width: 40%; background: #f9f9f9; padding: 8px; border: 1px solid #eee; text-align: left; }
+    .payment-table td { padding: 8px; border: 1px solid #eee; }
+    .payment-info .note { color: red; font-weight: bold; margin-top: 10px; font-size: 14px; }
+
+    /* E-ticket styles */
+    #eticketSection { display: none; padding: 20px; background: #fff; }
+    #eticket { background: #fff; padding: 30px; border-radius: 8px; max-width: 600px; margin: auto; border: 1px solid #ddd; }
+    #eticket h2 { text-align: center; margin-bottom: 20px; }
+    .eticket-logo { width: 100%; height: auto; margin-bottom: 15px; display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid #aaa; }
+    th, td { padding: 10px; font-size: 14px; text-align: left; vertical-align: top; }
+    th { width: 40%; background-color: #f9f9f9; }
+    #btnCetak, #btnWhatsapp button { background-color: #444; color: white; border-radius: 6px; padding: 12px; width: 100%; cursor: pointer; margin-top: 10px; }
+    .lokasi-penukaran { display: none; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #eticket, #eticket * { visibility: visible; }
+      #eticket {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        padding: 40px;
+        width: 100%;
+        max-width: 100%;
+        border: none;
+        box-shadow: none;
+        background: #fff;
+      }
+      table th, table td { padding: 12px; font-size: 16px; }
+      .lokasi-penukaran { display: block; margin-top: 30px; }
+      #formSection, #btnCetak, #btnWhatsapp { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="formSection">
+  <div style="text-align: center;">
+    <img src="aniv.jpg" alt="Logo Ultras Manmodel" class="eticket-logo">
+  </div>
+  <form id="pesanForm">
+    <label for="nama">Nama Lengkap</label>
+    <input type="text" id="nama" required>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required>
+
+    <label for="ktp">No KTP</label>
+    <input type="text" id="ktp" required>
+
+    <label for="telp">No Telepon</label>
+    <input type="text" id="telp" required>
+
+    <label for="kategori">Kategori Tiket</label>
+    <select id="kategori" required>
+      <option value="" disabled selected>Pilih kategori</option>
+      <option value="Pre Sale 1">Pre Sale 1</option>
+      <option value="Pre Sale 2">Pre Sale 2</option>
+      <option value="Pre Sale 3">Pre Sale 3</option>
+    </select>
+
+    <div id="hargaInfo" class="harga-info">Harga: -</div>
+
+    <div class="payment-info">
+      <label>Metode Pembayaran</label>
+      <div class="payment-card">
+        <table class="payment-table">
+          <tr><th>Bank</th><td>BCA</td></tr>
+          <tr><th>Nomor Rekening</th><td>8640910942</td></tr>
+          <tr><th>Atas Nama</th><td>MUHAMMAD AJI YOGA PRATAMA</td></tr>
+        </table>
+        <p class="note">Setelah transfer, screenshot bukti pembayaran dan cetak e-ticket lalu konfirmasi ke WhatsApp panitia.</p>
+      </div>
+    </div>
+
+    <input type="hidden" id="metode" value="BCA - 8640910942 (MUHAMMAD AJI YOGA PRATAMA)">
+    <button type="submit">Pesan Tiket</button>
+  </form>
+</div>
+
+<div id="eticketSection">
+  <div id="eticket">
+    <div style="text-align: center;">
+      <h2>E-TICKET 1 DEKADE ULTRAS MANMODEL</h2>
+      <img src="tiket.png" alt="Logo Tiket" class="eticket-logo">
+    </div>
+
+    <table>
+      <tr><th>Nama Lengkap</th><td id="eNama"></td></tr>
+      <tr><th>Email</th><td id="eEmail"></td></tr>
+      <tr><th>No KTP</th><td id="eKTP"></td></tr>
+      <tr><th>No Telepon</th><td id="eTelp"></td></tr>
+      <tr><th>Kategori Tiket</th><td id="eKategori"></td></tr>
+      <tr><th>Harga Tiket</th><td id="eHarga"></td></tr>
+      <tr><th>Metode Pembayaran</th><td id="eMetode"></td></tr>
+      <tr><th>Tanggal Pemesanan</th><td id="eTanggal"></td></tr>
+    </table>
+
+    <div class="lokasi-penukaran">
+      <table>
+        <tr><th>Lokasi Penukaran</th><td>Warung Mak'e, Belakang Pasar Singonoyo</td></tr>
+        <tr><th>Jam Penukaran</th><td>15:00 - 20:00 WIB</td></tr>
+      </table>
+    </div>
+
+    <button id="btnCetak" onclick="window.print()">Cetak Tiket</button>
+    <a id="btnWhatsapp" href="#" target="_blank"><button>Konfirmasi via WhatsApp</button></a>
+  </div>
+</div>
+
+<script>
+  const hargaTiket = {
+    "Pre Sale 1": "Rp 50.000",
+    "Pre Sale 2": "Rp 65.000",
+    "Pre Sale 3": "Rp 75.000"
+  };
+  const kategoriEl = document.getElementById('kategori');
+  kategoriEl.addEventListener('change', () => {
+    const harga = hargaTiket[kategoriEl.value];
+    document.getElementById('hargaInfo').innerText = `Harga: ${harga}`;
+  });
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD1HWtoCb-EOapsJu7wnOXIXTEtQEOLCZ8",
+    authDomain: "satudekade-4b54a.firebaseapp.com",
+    databaseURL: "https://satudekade-4b54a-default-rtdb.firebaseio.com",
+    projectId: "satudekade-4b54a",
+    storageBucket: "satudekade-4b54a.appspot.com",
+    messagingSenderId: "76649124389",
+    appId: "1:76649124389:web:3b0b7072ea71e7ece7a5cc"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  document.getElementById("pesanForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const nama = document.getElementById("nama").value;
+    const email = document.getElementById("email").value.replace(/\./g, "_");
+    const ktp = document.getElementById("ktp").value;
+    const telp = document.getElementById("telp").value;
+    const kategori = kategoriEl.value;
+    const harga = hargaTiket[kategori];
+    const metode = document.getElementById("metode").value;
+    const tanggal = new Date().toLocaleString("id-ID");
+
+    const path = `pemesan/${nama}/${email}/${ktp}/${telp}/${kategori}/${metode}`;
+    db.ref(path).set({ tanggal })
+      .then(() => {
+        alert("Pesan tiket berhasil!");
+        document.getElementById("eNama").innerText = nama;
+        document.getElementById("eEmail").innerText = email.replace(/_/g, ".");
+        document.getElementById("eKTP").innerText = ktp;
+        document.getElementById("eTelp").innerText = telp;
+        document.getElementById("eKategori").innerText = kategori;
+        document.getElementById("eHarga").innerText = harga;
+        document.getElementById("eMetode").innerText = metode;
+        document.getElementById("eTanggal").innerText = tanggal;
+
+        const waMessage = `Halo, saya ingin konfirmasi pemesanan tiket:%0ANama: ${nama}%0AEmail: ${email.replace(/_/g, ".")}%0AKTP: ${ktp}%0ATelp: ${telp}%0AKategori: ${kategori}%0AHarga: ${harga}%0ATanggal: ${tanggal}`;
+        document.getElementById("btnWhatsapp").href = `https://wa.me/6285855094087?text=${waMessage}`;
+
+        document.getElementById("eticketSection").style.display = "block";
+        document.getElementById("formSection").style.display = "none";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      })
+      .catch(err => alert("Gagal menyimpan data: " + err.message));
+  });
+</script>
+
+</body>
+</html>
